@@ -15,6 +15,12 @@ Let's use filesystem APIs to implement the core operations of the key-value serv
 
 Modify your program to create the database file with permissions locked down to the file's owner. Change your on-disk format to use multiple files: you can have one file per key, or do something fancier like allowing keys to have multiple parts such as `a.b.c` and store all `a.*` keys in the same file. Add commands to list all keys and to delete a key from the database.
 
+- [x] Refactor file storage to use a file per key
+- [x] Ensure chmod 700 on directory
+- [x] Ensure chmod 600 on key files
+- [ ] Implement `keys` (list all keys)
+- [ ] Implement `delete (key)` (delete a key)
+
 # Week 3
 
 No milestone this week!
