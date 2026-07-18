@@ -108,6 +108,29 @@ def test_keys_ignores_temporary_files(tmp_path) -> None:
     assert store.keys() == ["name"]
 
 
+def test_delete_removes_existing_key(tmp_path) -> None:
+    data_dir = tmp_path / "data"
+    store = Store(data_dir)
+    store.set("name", "Alice")
+
+    assert store.delete("name") is True
+    assert store.get("name") is None
+    assert not (data_dir / "name").exists()
+
+
+def test_delete_returns_false_when_key_is_missing(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+
+    assert store.delete("missing") is False
+
+
+def test_delete_rejects_invalid_key(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+
+    with pytest.raises(ValueError, match="invalid key"):
+        store.delete("Invalid")
+
+
 def test_get_rejects_invalid_key(tmp_path) -> None:
     store = Store(tmp_path / "data")
 

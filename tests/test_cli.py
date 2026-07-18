@@ -53,6 +53,37 @@ def test_cli_keys_prints_nothing_when_store_is_empty(tmp_path, capsys) -> None:
     assert captured.err == ""
 
 
+def test_cli_delete_removes_existing_key(tmp_path, capsys) -> None:
+    data_dir = tmp_path / "data"
+
+    main(["--data", str(data_dir), "set", "name", "Alice"])
+    main(["--data", str(data_dir), "delete", "name"])
+    main(["--data", str(data_dir), "get", "name"])
+
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
+
+
+def test_cli_delete_missing_key_prints_nothing(tmp_path, capsys) -> None:
+    data_dir = tmp_path / "data"
+
+    main(["--data", str(data_dir), "delete", "missing"])
+
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
+
+
+def test_cli_delete_rejects_invalid_key(tmp_path) -> None:
+    data_dir = tmp_path / "data"
+
+    with pytest.raises(ValueError, match="invalid key"):
+        main(["--data", str(data_dir), "delete", "Invalid"])
+
+
 def test_cli_requires_data_flag(capsys) -> None:
     with pytest.raises(SystemExit) as error:
         main(["get", "name"])

@@ -19,7 +19,7 @@ Modify your program to create the database file with permissions locked down to 
 - [x] Ensure chmod 700 on directory
 - [x] Ensure chmod 600 on key files
 - [x] Implement `keys` (list all keys)
-- [ ] Implement `delete (key)` (delete a key)
+- [x] Implement `delete (key)` (delete a key)
 
 # Week 3
 

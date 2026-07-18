@@ -22,6 +22,9 @@ def build_parser() -> argparse.ArgumentParser:
     set_parser.add_argument("key")
     set_parser.add_argument("value")
 
+    delete_parser = subparsers.add_parser("delete")
+    delete_parser.add_argument("key")
+
     subparsers.add_parser("keys")
 
     return parser
@@ -46,6 +49,9 @@ def main(argv: list[str] | None = None) -> None:
             for key in store.keys():
                 print(key)
             return
+
+        case "delete":
+            store.delete(args.key)
 
         case _:
             raise ValueError(f"unknown command: {args.command}")

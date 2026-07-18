@@ -47,6 +47,16 @@ class Store:
 
         return sorted(result)
 
+    def delete(self, key: str) -> bool:
+        validate_key(key)
+
+        path = self._key_path(key)
+        if not path.exists():
+            return False
+
+        os.unlink(path)
+        return True
+
     def _ensure_data_directory(self) -> None:
         if not os.path.isdir(self.data_directory):
             os.makedirs(self.data_directory, mode=0o700, exist_ok=True)
