@@ -29,5 +29,12 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.pyright]
+extraPaths = ["src"]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+venv = ".venv"
+venvPath = "."
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/keyvalue"]
