@@ -22,6 +22,8 @@ def build_parser() -> argparse.ArgumentParser:
     set_parser.add_argument("key")
     set_parser.add_argument("value")
 
+    subparsers.add_parser("keys")
+
     return parser
 
 
@@ -29,17 +31,24 @@ def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     store = Store(args.data)
 
-    if args.command == "get":
-        value = store.get(args.key)
-        if value is not None:
-            print(value)
-        return
+    match args.command:
+        case "get":
+            value = store.get(args.key)
+            if value is not None:
+                print(value)
+            return
 
-    if args.command == "set":
-        store.set(args.key, args.value)
-        return
+        case "set":
+            store.set(args.key, args.value)
+            return
 
-    raise ValueError(f"unknown command: {args.command}")
+        case "keys":
+            for key in store.keys():
+                print(key)
+            return
+
+        case _:
+            raise ValueError(f"unknown command: {args.command}")
 
 
 if __name__ == "__main__":

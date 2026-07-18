@@ -37,6 +37,16 @@ class Store:
             tmp_path.unlink(missing_ok=True)
             raise
 
+    def keys(self) -> list[str]:
+        result = []
+
+        with os.scandir(self.data_directory) as entries:
+            for entry in entries:
+                if entry.is_file() and not entry.name.endswith(".tmp"):
+                    result.append(entry.name)
+
+        return sorted(result)
+
     def _ensure_data_directory(self) -> None:
         if not os.path.isdir(self.data_directory):
             os.makedirs(self.data_directory, mode=0o700, exist_ok=True)

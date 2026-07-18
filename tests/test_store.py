@@ -83,6 +83,31 @@ def test_store_persists_values_across_instances(tmp_path) -> None:
     assert Store(path).get("name") == "Alice"
 
 
+def test_keys_returns_empty_list_when_store_is_empty(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+
+    assert store.keys() == []
+
+
+def test_keys_returns_sorted_keys(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+
+    store.set("last_name", "Lovelace")
+    store.set("first_name", "Ada")
+    store.set("user.email", "ada@example.com")
+
+    assert store.keys() == ["first_name", "last_name", "user.email"]
+
+
+def test_keys_ignores_temporary_files(tmp_path) -> None:
+    data_dir = tmp_path / "data"
+    store = Store(data_dir)
+    store.set("name", "Alice")
+    (data_dir / ".name.tmp").write_text("partial")
+
+    assert store.keys() == ["name"]
+
+
 def test_get_rejects_invalid_key(tmp_path) -> None:
     store = Store(tmp_path / "data")
 

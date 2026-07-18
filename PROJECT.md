@@ -18,7 +18,7 @@ Modify your program to create the database file with permissions locked down to 
 - [x] Refactor file storage to use a file per key
 - [x] Ensure chmod 700 on directory
 - [x] Ensure chmod 600 on key files
-- [ ] Implement `keys` (list all keys)
+- [x] Implement `keys` (list all keys)
 - [ ] Implement `delete (key)` (delete a key)
 
 # Week 3
