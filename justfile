@@ -7,8 +7,8 @@ format-check:
 lint:
     uv run ruff check .
 
-test:
-    uv run pytest
+test *args:
+    uv run pytest {{args}}
 
 server *args:
     uv run python -m keyvalue {{args}}
