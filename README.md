@@ -1,5 +1,7 @@
 # keyvalue.py
 
+[![CI](https://github.com/dbalatero/keyvalue.py/actions/workflows/ci.yml/badge.svg)](https://github.com/dbalatero/keyvalue.py/actions/workflows/ci.yml)
+
 A small Python key/value store.
 
 ## Usage
