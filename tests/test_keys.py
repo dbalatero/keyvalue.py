@@ -1,5 +1,7 @@
 import pytest
+
 from keyvalue.keys import validate_key
+
 
 @pytest.mark.parametrize(
     "key",
@@ -10,10 +12,11 @@ from keyvalue.keys import validate_key
         "user_1",
         "user.name",
         "1.2.3",
-    ]
+    ],
 )
 def test_validate_key_accepts_valid_keys(key: str) -> None:
     validate_key(key)
+
 
 @pytest.mark.parametrize(
     "key",
