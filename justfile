@@ -7,6 +7,9 @@ lint:
 test:
     uv run pytest
 
+server:
+    uv run python -m keyvalue
+
 check:
     just lint
     just test
