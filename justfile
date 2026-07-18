@@ -10,8 +10,8 @@ lint:
 test:
     uv run pytest
 
-server:
-    uv run python -m keyvalue
+server *args:
+    uv run python -m keyvalue {{args}}
 
 check:
     just format-check
