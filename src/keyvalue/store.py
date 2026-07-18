@@ -26,13 +26,19 @@ class Store:
 
         # Temp path so we avoid issues if we crash during writes
         tmp_path = path.with_name(f".{path.name}.tmp")
-        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        fd = os.open(
+            tmp_path,
+            os.O_WRONLY  # writing only
+            | os.O_CREAT  # create file if doesn't exist
+            | os.O_EXCL,  # fail if the temp file exists for some reason
+            0o600,  # only allow user to read/write
+        )
         try:
             with os.fdopen(fd, "w") as file:
                 file.write(value)
 
             tmp_path.replace(path)
-            path.chmod(0o600)  # paranoia
+            path.chmod(0o600)  # paranoia, even though the temp file is 600
         except Exception:
             tmp_path.unlink(missing_ok=True)
             raise
