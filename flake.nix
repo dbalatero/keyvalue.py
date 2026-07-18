@@ -20,7 +20,6 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             just
-            netcat
             python312
             ruff
             uv
