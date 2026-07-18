@@ -6,3 +6,7 @@ lint:
 
 test:
     uv run pytest
+
+check:
+    just lint
+    just test
