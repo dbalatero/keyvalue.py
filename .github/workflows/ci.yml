@@ -17,6 +17,9 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
+      - name: Build dev shell
+        run: nix develop --command true
+
       - name: Check formatting
         run: nix develop --command just format-check
 
