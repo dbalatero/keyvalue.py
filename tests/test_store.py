@@ -9,6 +9,14 @@ def test_get_missing_key_returns_none(tmp_path) -> None:
     assert store.get("missing") is None
 
 
+def test_empty_database_file_is_treated_as_empty(tmp_path) -> None:
+    path = tmp_path / "db.json"
+    path.write_text("")
+    store = Store(path)
+
+    assert store.get("missing") is None
+
+
 def test_set_then_get_returns_value(tmp_path) -> None:
     store = Store(tmp_path / "db.json")
 

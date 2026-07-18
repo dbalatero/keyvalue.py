@@ -25,8 +25,11 @@ class Store:
         if not self.path.exists():
             return {}
 
-        with self.path.open() as file:
-            return json.load(file)
+        contents = self.path.read_text().strip()
+        if contents == "":
+            return {}
+
+        return json.loads(contents)
 
     def _save(self, data: dict[str, str]) -> None:
         # Ensure parent dir exists
