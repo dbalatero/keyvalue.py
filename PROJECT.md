@@ -24,3 +24,47 @@ Modify your program to create the database file with permissions locked down to 
 # Week 3
 
 No milestone this week!
+
+# Week 4
+
+Turn your key-value store into a Unix domain socket server. Write a client subcommand that connects to the server and allows you to read and write keys. Add a mode that uses a FIFO instead of sockets for client–server communication.
+
+- [ ] Make a `server` command that listens for commands
+  - [ ] Define the wire format: one JSON request per line, one JSON response per line
+  - [ ] Add typed request models for `get`, `set`, `keys`, and `delete`
+    - [ ] Use a Python validation library like Pydantic for a Zod-like parser
+    - [ ] Validate keys at the protocol boundary using the existing key validator
+    - [ ] Reject unknown commands, missing fields, wrong field types, and invalid keys
+  - [ ] Add typed response models
+    - [ ] Successful `get`: `{ "ok": true, "value": "..." }`
+    - [ ] Missing `get`: `{ "ok": true, "value": null }`
+    - [ ] Successful `keys`: `{ "ok": true, "keys": [...] }`
+    - [ ] Successful mutation: `{ "ok": true }`
+    - [ ] Failed request: `{ "ok": false, "error": "..." }`
+  - [ ] Write unit tests for request parsing before adding socket code
+  - [ ] Write unit tests for response encoding before adding socket code
+  - [ ] Add a command handler function that takes a parsed request and a `Store`
+    - [ ] Test `get`, `set`, `keys`, and `delete` without sockets
+    - [ ] Test validation errors become error responses
+  - [ ] Add a connection handler that reads one request from a connection and writes one response
+    - [ ] Test it with `socket.socketpair()` so the test does not need a real socket path
+  - [ ] Add the UNIX domain socket server loop
+    - [ ] Create the socket with `socket.AF_UNIX`
+    - [ ] Bind it to a socket path
+    - [ ] Listen for connections
+    - [ ] Accept connections in a loop
+    - [ ] Pass each accepted connection to the connection handler
+    - [ ] Clean up a stale socket file before binding
+    - [ ] Remove the socket file when the server exits
+- [ ] Make a `client` command that communicates over the domain socket
+  - [ ] Build request objects from CLI arguments
+  - [ ] Encode requests as newline-delimited JSON
+  - [ ] Connect to the UNIX socket path
+  - [ ] Send one request and read one response
+  - [ ] Print `get` values and `keys` results like the current CLI does
+  - [ ] Print or raise useful errors when the server returns `{ "ok": false }`
+  - [ ] Add integration tests with a server running in a background thread
+- [ ] Abstract out the client and server interfaces to allow for FIFO mode instead
+  - [ ] Do this after the UNIX socket path works
+  - [ ] Extract only the parts shared by UNIX sockets and FIFO mode
+  - [ ] Keep request parsing, response encoding, and store dispatch independent from the transport
