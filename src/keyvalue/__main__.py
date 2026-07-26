@@ -8,12 +8,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="keyvalue")
     parser.add_argument(
         "--data",
-        required=True,
+        default=Path("/tmp/keyvalue-data"),
         type=Path,
         help="path to the database file",
     )
+    parser.add_argument(
+        "--socket",
+        type=Path,
+        default=Path("/tmp/keyvalue.sock"),
+        help="path to the UNIX domain socket",
+    )
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     get_parser = subparsers.add_parser("get")
     get_parser.add_argument("key")
@@ -28,9 +34,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("keys")
     subparsers.add_parser("server")
 
+    return parser
+
 
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+    if args.command is None:
+        args.command = "server"
+
     store = Store(args.data)
 
     match args.command:
@@ -51,6 +62,9 @@ def main(argv: list[str] | None = None) -> None:
 
         case "delete":
             store.delete(args.key)
+
+        case "server":
+            print("TODO: implement server")
 
         case _:
             raise ValueError(f"unknown command: {args.command}")

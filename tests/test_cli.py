@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import pytest
 
-from keyvalue.__main__ import main
+from keyvalue.__main__ import build_parser, main
 
 # Using capsys to capture stdout/stderr in tests for inspection.
 
@@ -84,12 +86,10 @@ def test_cli_delete_rejects_invalid_key(tmp_path) -> None:
         main(["--data", str(data_dir), "delete", "Invalid"])
 
 
-def test_cli_requires_data_flag(capsys) -> None:
-    with pytest.raises(SystemExit) as error:
-        main(["get", "name"])
+def test_cli_defaults_data_path() -> None:
+    args = build_parser().parse_args(["get", "name"])
 
-    assert error.value.code == 2
-    assert "--data" in capsys.readouterr().err
+    assert args.data == Path("/tmp/keyvalue-data")
 
 
 def test_cli_rejects_invalid_key(tmp_path) -> None:
@@ -97,3 +97,25 @@ def test_cli_rejects_invalid_key(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="invalid key"):
         main(["--data", str(data_dir), "get", "Invalid"])
+
+
+def test_cli_defaults_socket_path() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
+
+    assert args.socket == Path("/tmp/keyvalue.sock")
+
+
+def test_cli_accepts_top_level_socket_path(tmp_path) -> None:
+    socket_path = tmp_path / "keyvalue.sock"
+
+    args = build_parser().parse_args(
+        ["--data", "/tmp/kvdata", "--socket", str(socket_path), "server"]
+    )
+
+    assert args.socket == socket_path
+
+
+def test_cli_allows_missing_subcommand_for_server_mode() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata"])
+
+    assert args.command is None
