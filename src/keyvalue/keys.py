@@ -8,6 +8,9 @@ _KEY_ERROR = (
 )
 
 
-def validate_key(key: str) -> None:
+# Returns the `key` if it passes validation.
+def validate_key(key: str) -> str:
     if not _KEY_PATTERN.fullmatch(key):
         raise ValueError(f"{_KEY_ERROR}; got {key!r}")
+
+    return key

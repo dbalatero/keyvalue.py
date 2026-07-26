@@ -30,11 +30,11 @@ No milestone this week!
 Turn your key-value store into a Unix domain socket server. Write a client subcommand that connects to the server and allows you to read and write keys. Add a mode that uses a FIFO instead of sockets for client–server communication.
 
 - [ ] Make a `server` command that listens for commands
-  - [ ] Define the wire format: one JSON request per line, one JSON response per line
-  - [ ] Add typed request models for `get`, `set`, `keys`, and `delete`
-    - [ ] Use a Python validation library like Pydantic for a Zod-like parser
-    - [ ] Validate keys at the protocol boundary using the existing key validator
-    - [ ] Reject unknown commands, missing fields, wrong field types, and invalid keys
+  - [x] Define the wire format: one JSON request per line, one JSON response per line
+  - [x] Add typed request models for `get`, `set`, `keys`, and `delete`
+    - [x] Use a Python validation library like Pydantic for a Zod-like parser
+    - [x] Validate keys at the protocol boundary using the existing key validator
+    - [x] Reject unknown commands, missing fields, wrong field types, and invalid keys
   - [ ] Add typed response models
     - [ ] Successful `get`: `{ "ok": true, "value": "..." }`
     - [ ] Missing `get`: `{ "ok": true, "value": null }`
