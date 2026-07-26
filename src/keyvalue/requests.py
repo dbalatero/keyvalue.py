@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError, field_validator
 
 from keyvalue.keys import validate_key
 
@@ -36,4 +36,15 @@ Request = Annotated[
     Field(discriminator="command"),
 ]
 
-request_adapter = TypeAdapter(Request)
+_request_adapter = TypeAdapter(Request)
+
+
+class RequestParseError(ValueError):
+    pass
+
+
+def parse_request(raw: str) -> Request:
+    try:
+        return _request_adapter.validate_json(raw)
+    except ValidationError as error:
+        raise RequestParseError(str(error)) from error

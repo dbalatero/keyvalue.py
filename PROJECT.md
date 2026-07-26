@@ -35,14 +35,14 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
     - [x] Use a Python validation library like Pydantic for a Zod-like parser
     - [x] Validate keys at the protocol boundary using the existing key validator
     - [x] Reject unknown commands, missing fields, wrong field types, and invalid keys
-  - [ ] Add typed response models
-    - [ ] Successful `get`: `{ "ok": true, "value": "..." }`
-    - [ ] Missing `get`: `{ "ok": true, "value": null }`
-    - [ ] Successful `keys`: `{ "ok": true, "keys": [...] }`
-    - [ ] Successful mutation: `{ "ok": true }`
-    - [ ] Failed request: `{ "ok": false, "error": "..." }`
-  - [ ] Write unit tests for request parsing before adding socket code
-  - [ ] Write unit tests for response encoding before adding socket code
+  - [x] Add typed response models
+    - [x] Successful `get`: `{ "ok": true, "value": "..." }`
+    - [x] Missing `get`: `{ "ok": true, "value": null }`
+    - [x] Successful `keys`: `{ "ok": true, "keys": [...] }`
+    - [x] Successful mutation: `{ "ok": true }`
+    - [x] Failed request: `{ "ok": false, "error": "..." }`
+  - [x] Write unit tests for request parsing before adding socket code
+  - [x] Write unit tests for response encoding before adding socket code
   - [ ] Add a command handler function that takes a parsed request and a `Store`
     - [ ] Test `get`, `set`, `keys`, and `delete` without sockets
     - [ ] Test validation errors become error responses
