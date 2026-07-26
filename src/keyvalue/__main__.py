@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from keyvalue.sockets import serve
 from keyvalue.store import Store
 
 
@@ -64,7 +65,8 @@ def main(argv: list[str] | None = None) -> None:
             store.delete(args.key)
 
         case "server":
-            print("TODO: implement server")
+            print("Listening at", args.socket)
+            serve(args.socket, store)
 
         case _:
             raise ValueError(f"unknown command: {args.command}")

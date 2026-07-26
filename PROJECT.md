@@ -48,14 +48,14 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
     - [x] Test validation errors become error responses in an outer loop `process_request()` function
   - [x] Add a connection handler that reads one request from a connection and writes one response
     - [x] Test it with `socket.socketpair()` so the test does not need a real socket path
-  - [ ] Add the UNIX domain socket server loop
-    - [ ] Create the socket with `socket.AF_UNIX`
-    - [ ] Bind it to a socket path
-    - [ ] Listen for connections
-    - [ ] Accept connections in a loop
-    - [ ] Pass each accepted connection to the connection handler
-    - [ ] Clean up a stale socket file before binding
-    - [ ] Remove the socket file when the server exits
+  - [x] Add the UNIX domain socket server loop
+    - [x] Create the socket with `socket.AF_UNIX`
+    - [x] Bind it to a socket path
+    - [x] Listen for connections
+    - [x] Accept connections in a loop
+    - [x] Pass each accepted connection to the connection handler
+    - [x] Clean up a stale socket file before binding
+    - [x] Remove the socket file when the server exits
 - [ ] Make a `client` command that communicates over the domain socket
   - [ ] Build request objects from CLI arguments
   - [ ] Encode requests as newline-delimited JSON
