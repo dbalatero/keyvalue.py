@@ -46,8 +46,8 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
   - [x] Add a command handler function that takes a parsed request and a `Store`
     - [x] Test `get`, `set`, `keys`, and `delete` without sockets
     - [x] Test validation errors become error responses in an outer loop `process_request()` function
-  - [ ] Add a connection handler that reads one request from a connection and writes one response
-    - [ ] Test it with `socket.socketpair()` so the test does not need a real socket path
+  - [x] Add a connection handler that reads one request from a connection and writes one response
+    - [x] Test it with `socket.socketpair()` so the test does not need a real socket path
   - [ ] Add the UNIX domain socket server loop
     - [ ] Create the socket with `socket.AF_UNIX`
     - [ ] Bind it to a socket path

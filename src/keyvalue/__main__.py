@@ -26,8 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     delete_parser.add_argument("key")
 
     subparsers.add_parser("keys")
-
-    return parser
+    subparsers.add_parser("server")
 
 
 def main(argv: list[str] | None = None) -> None:
