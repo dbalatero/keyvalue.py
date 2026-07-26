@@ -43,6 +43,10 @@ class RequestParseError(ValueError):
     pass
 
 
+def encode_request(request: Request) -> bytes:
+    return request.model_dump_json().encode("utf-8") + b"\n"
+
+
 def parse_request(raw: str) -> Request:
     try:
         return _request_adapter.validate_json(raw)

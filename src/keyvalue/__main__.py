@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from keyvalue.client import Client
 from keyvalue.sockets import serve
 from keyvalue.store import Store
 
@@ -43,30 +44,37 @@ def main(argv: list[str] | None = None) -> None:
     if args.command is None:
         args.command = "server"
 
-    store = Store(args.data)
+    socket_path = args.socket
+
+    client = Client(socket_path)
 
     match args.command:
         case "get":
-            value = store.get(args.key)
+            value = client.get(args.key)
             if value is not None:
                 print(value)
             return
 
         case "set":
-            store.set(args.key, args.value)
+            client.set(args.key, args.value)
+            print("OK")
             return
 
         case "keys":
-            for key in store.keys():
+            for key in client.keys():
                 print(key)
             return
 
         case "delete":
-            store.delete(args.key)
+            client.delete(args.key)
+            print("OK")
+            return
 
         case "server":
             print("Listening at", args.socket)
-            serve(args.socket, store)
+
+            store = Store(args.data)
+            serve(socket_path, store)
 
         case _:
             raise ValueError(f"unknown command: {args.command}")

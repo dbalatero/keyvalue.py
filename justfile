@@ -10,6 +10,9 @@ lint:
 test *args:
     uv run pytest {{args}}
 
+client *args:
+    uv run python -m keyvalue {{args}}
+
 server *args:
     uv run python -m keyvalue {{args}}
 

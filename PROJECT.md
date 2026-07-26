@@ -56,14 +56,14 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
     - [x] Pass each accepted connection to the connection handler
     - [x] Clean up a stale socket file before binding
     - [x] Remove the socket file when the server exits
-- [ ] Make a `client` command that communicates over the domain socket
-  - [ ] Build request objects from CLI arguments
-  - [ ] Encode requests as newline-delimited JSON
-  - [ ] Connect to the UNIX socket path
-  - [ ] Send one request and read one response
-  - [ ] Print `get` values and `keys` results like the current CLI does
-  - [ ] Print or raise useful errors when the server returns `{ "ok": false }`
-  - [ ] Add integration tests with a server running in a background thread
+- [x] Make a `client` command that communicates over the domain socket
+  - [x] Build request objects from CLI arguments
+  - [x] Encode requests as newline-delimited JSON
+  - [x] Connect to the UNIX socket path
+  - [x] Send one request and read one response
+  - [x] Print `get` values and `keys` results like the current CLI does
+  - [x] Print or raise useful errors when the server returns `{ "ok": false }`
+  - [x] Add integration tests with a server running in a background thread
 - [ ] Abstract out the client and server interfaces to allow for FIFO mode instead
   - [ ] Do this after the UNIX socket path works
   - [ ] Extract only the parts shared by UNIX sockets and FIFO mode

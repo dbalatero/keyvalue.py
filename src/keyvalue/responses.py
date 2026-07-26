@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 
 class ResponseModel(BaseModel):
@@ -36,3 +36,14 @@ _response_adapter = TypeAdapter(Response)
 
 def encode_response(response: Response) -> bytes:
     return response.model_dump_json().encode("utf-8") + b"\n"
+
+
+class ResponseParseError(ValueError):
+    pass
+
+
+def parse_response(raw: str | bytes) -> Response:
+    try:
+        return _response_adapter.validate_json(raw)
+    except ValidationError as error:
+        raise ResponseParseError(str(error)) from error

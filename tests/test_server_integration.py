@@ -5,25 +5,23 @@ import sys
 import time
 from pathlib import Path
 
+from keyvalue.client import Client, KeyValueClientError
 from keyvalue.store import Store
 
 
-# TODO: swap in the real client once we write it
-def send_request(
-    socket_path: Path,
-    request: bytes,
+def wait_until_server_ready(
     process: subprocess.Popen[bytes],
-) -> bytes:
+    socket_path: Path,
+) -> None:
+    client = Client(socket_path)
     deadline = time.monotonic() + 2
     last_error = None
 
     while time.monotonic() < deadline:
         try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-                client.connect(str(socket_path))
-                client.sendall(request)
-                return client.recv(4096)
-        except OSError as error:
+            client.keys()
+            return
+        except (KeyValueClientError, OSError) as error:
             last_error = error
             if process.poll() is not None:
                 stdout, stderr = process.communicate(timeout=1)
@@ -35,7 +33,17 @@ def send_request(
 
             time.sleep(0.01)
 
-    raise AssertionError(f"could not connect to server: {last_error}")
+    raise AssertionError(f"server did not become ready: {last_error}")
+
+
+def send_request(
+    socket_path: Path,
+    request: bytes,
+) -> bytes:
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.connect(str(socket_path))
+        client.sendall(request)
+        return client.recv(4096)
 
 
 def stop_server(process: subprocess.Popen[bytes]) -> None:
@@ -51,6 +59,8 @@ def test_server_process_handles_client_requests(tmp_path) -> None:
     repo_root = Path(__file__).parents[1]
     data_dir = tmp_path / "data"
     socket_path = tmp_path / "keyvalue.sock"
+    client = Client(socket_path)
+
     env = os.environ.copy()
     env["PYTHONPATH"] = str(repo_root / "src")
 
@@ -72,26 +82,20 @@ def test_server_process_handles_client_requests(tmp_path) -> None:
     )
 
     try:
-        set_response = send_request(
-            socket_path,
-            b'{"command":"set","key":"name","value":"Alice"}\n',
-            process,
-        )
-        get_response = send_request(
-            socket_path,
-            b'{"command":"get","key":"name"}\n',
-            process,
-        )
-        error_response = send_request(
-            socket_path,
-            b'{"command":"get","key":"Invalid"}\n',
-            process,
-        )
+        wait_until_server_ready(process, socket_path)
 
-        assert set_response == b'{"ok":true}\n'
-        assert get_response == b'{"ok":true,"value":"Alice"}\n'
-        assert b'"ok":false' in error_response
-        assert b"invalid key" in error_response
-        assert Store(data_dir).get("name") == "Alice"
+        client.set("name", "Alice")
+        assert client.get("name") == "Alice"
+        assert client.keys() == ["name"]
+
+        client.set("foo", "bar")
+        assert client.keys() == ["foo", "name"]
+
+        client.delete("foo")
+        assert client.keys() == ["name"]
+        assert client.get("foo") is None
+
+        client.set("name", "Jeff")
+        assert client.get("name") == "Jeff"
     finally:
         stop_server(process)
