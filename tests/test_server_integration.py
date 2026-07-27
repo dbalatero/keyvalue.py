@@ -1,7 +1,12 @@
 import pytest
 
 from keyvalue.client import Client, FifoTransport, SocketTransport
-from server_helpers import RunningServer, start_fifo_server, start_socket_server, stop_server
+from server_helpers import (
+    RunningServer,
+    start_fifo_server,
+    start_socket_server,
+    stop_server,
+)
 
 
 def make_client(server: RunningServer) -> Client:
