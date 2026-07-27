@@ -38,7 +38,7 @@ def handle_connection(conn: socket.socket, store: Store) -> None:
     conn.sendall(response)
 
 
-def serve(socket_path: Path, store: Store) -> None:
+def serve_socket(socket_path: Path, store: Store) -> None:
     with create_server_socket(socket_path) as sock:
         while True:
             accept_one(sock, store)

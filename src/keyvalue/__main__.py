@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from keyvalue.client import Client
-from keyvalue.sockets import serve
+from keyvalue.sockets import serve_socket
 from keyvalue.store import Store
 
 
@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> None:
             print("Listening at", args.socket)
 
             store = Store(args.data)
-            serve(socket_path, store)
+            serve_socket(socket_path, store)
 
         case _:
             raise ValueError(f"unknown command: {args.command}")
