@@ -29,7 +29,7 @@ No milestone this week!
 
 Turn your key-value store into a Unix domain socket server. Write a client subcommand that connects to the server and allows you to read and write keys. Add a mode that uses a FIFO instead of sockets for client–server communication.
 
-- [ ] Make a `server` command that listens for commands
+- [x] Make a `server` command that listens for commands
   - [x] Define the wire format: one JSON request per line, one JSON response per line
   - [x] Add typed request models for `get`, `set`, `keys`, and `delete`
     - [x] Use a Python validation library like Pydantic for a Zod-like parser
@@ -64,7 +64,7 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
   - [x] Print `get` values and `keys` results like the current CLI does
   - [x] Print or raise useful errors when the server returns `{ "ok": false }`
   - [x] Add integration tests with a server running in a background thread
-- [ ] Abstract out the client and server interfaces to allow for FIFO mode instead
-  - [ ] Do this after the UNIX socket path works
-  - [ ] Extract only the parts shared by UNIX sockets and FIFO mode
-  - [ ] Keep request parsing, response encoding, and store dispatch independent from the transport
+- [x] Abstract out the client and server interfaces to allow for FIFO mode instead
+  - [x] Do this after the UNIX socket path works
+  - [x] Extract only the parts shared by UNIX sockets and FIFO mode
+  - [x] Keep request parsing, response encoding, and store dispatch independent from the transport
