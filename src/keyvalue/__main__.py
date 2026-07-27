@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 
-from keyvalue.client import Client
+from keyvalue.client import Client, FifoTransport, SocketTransport
+from keyvalue.fifo import serve_fifo
 from keyvalue.sockets import serve_socket
 from keyvalue.store import Store
 
@@ -19,6 +20,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("/tmp/keyvalue.sock"),
         help="path to the UNIX domain socket",
+    )
+    parser.add_argument(
+        "--fifo",
+        type=Path,
+        default=None,
+        help="path prefix for the FIFO communication pipes",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=False)
@@ -44,9 +51,14 @@ def main(argv: list[str] | None = None) -> None:
     if args.command is None:
         args.command = "server"
 
+    mode = "fifo" if args.fifo else "socket"
     socket_path = args.socket
 
-    client = Client(socket_path)
+    transport = (
+        SocketTransport(socket_path) if mode == "socket" else FifoTransport(args.fifo)
+    )
+
+    client = Client(transport)
 
     match args.command:
         case "get":
@@ -71,10 +83,15 @@ def main(argv: list[str] | None = None) -> None:
             return
 
         case "server":
-            print("Listening at", args.socket)
-
             store = Store(args.data)
-            serve_socket(socket_path, store)
+            print(f"Running in {mode} mode")
+
+            if mode == "socket":
+                print("Listening at", args.socket)
+
+                serve_socket(socket_path, store)
+            else:
+                serve_fifo(args.fifo, store)
 
         case _:
             raise ValueError(f"unknown command: {args.command}")

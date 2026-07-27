@@ -3,26 +3,36 @@ from pathlib import Path
 import pytest
 
 from keyvalue.__main__ import build_parser, main
+from server_helpers import RunningServer, start_socket_server, stop_server
 
 # Using capsys to capture stdout/stderr in tests for inspection.
 
 
-def test_cli_set_then_get_prints_value(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
+@pytest.fixture
+def socket_server(tmp_path) -> RunningServer:
+    server = start_socket_server(tmp_path)
+    try:
+        yield server
+    finally:
+        stop_server(server.process)
 
-    main(["--data", str(data_dir), "set", "name", "Alice"])
-    main(["--data", str(data_dir), "get", "name"])
+
+def run_client_command(server: RunningServer, args: list[str]) -> None:
+    main(["--data", str(server.data_dir), "--socket", str(server.path), *args])
+
+
+def test_cli_set_then_get_prints_value(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["set", "name", "Alice"])
+    run_client_command(socket_server, ["get", "name"])
 
     captured = capsys.readouterr()
 
-    assert captured.out == "Alice\n"
+    assert captured.out == "OK\nAlice\n"
     assert captured.err == ""
 
 
-def test_cli_get_missing_key_prints_nothing(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
-
-    main(["--data", str(data_dir), "get", "missing"])
+def test_cli_get_missing_key_prints_nothing(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["get", "missing"])
 
     captured = capsys.readouterr()
 
@@ -30,24 +40,20 @@ def test_cli_get_missing_key_prints_nothing(tmp_path, capsys) -> None:
     assert captured.err == ""
 
 
-def test_cli_keys_prints_sorted_keys(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
-
-    main(["--data", str(data_dir), "set", "last_name", "Lovelace"])
-    main(["--data", str(data_dir), "set", "first_name", "Ada"])
-    main(["--data", str(data_dir), "set", "user.email", "ada@example.com"])
-    main(["--data", str(data_dir), "keys"])
+def test_cli_keys_prints_sorted_keys(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["set", "last_name", "Lovelace"])
+    run_client_command(socket_server, ["set", "first_name", "Ada"])
+    run_client_command(socket_server, ["set", "user.email", "ada@example.com"])
+    run_client_command(socket_server, ["keys"])
 
     captured = capsys.readouterr()
 
-    assert captured.out == "first_name\nlast_name\nuser.email\n"
+    assert captured.out == "OK\nOK\nOK\nfirst_name\nlast_name\nuser.email\n"
     assert captured.err == ""
 
 
-def test_cli_keys_prints_nothing_when_store_is_empty(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
-
-    main(["--data", str(data_dir), "keys"])
+def test_cli_keys_prints_nothing_when_store_is_empty(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["keys"])
 
     captured = capsys.readouterr()
 
@@ -55,27 +61,23 @@ def test_cli_keys_prints_nothing_when_store_is_empty(tmp_path, capsys) -> None:
     assert captured.err == ""
 
 
-def test_cli_delete_removes_existing_key(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
-
-    main(["--data", str(data_dir), "set", "name", "Alice"])
-    main(["--data", str(data_dir), "delete", "name"])
-    main(["--data", str(data_dir), "get", "name"])
+def test_cli_delete_removes_existing_key(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["set", "name", "Alice"])
+    run_client_command(socket_server, ["delete", "name"])
+    run_client_command(socket_server, ["get", "name"])
 
     captured = capsys.readouterr()
 
-    assert captured.out == ""
+    assert captured.out == "OK\nOK\n"
     assert captured.err == ""
 
 
-def test_cli_delete_missing_key_prints_nothing(tmp_path, capsys) -> None:
-    data_dir = tmp_path / "data"
-
-    main(["--data", str(data_dir), "delete", "missing"])
+def test_cli_delete_missing_key_prints_nothing(socket_server, capsys) -> None:
+    run_client_command(socket_server, ["delete", "missing"])
 
     captured = capsys.readouterr()
 
-    assert captured.out == ""
+    assert captured.out == "OK\n"
     assert captured.err == ""
 
 

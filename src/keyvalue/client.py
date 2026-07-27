@@ -1,6 +1,7 @@
 import socket
 from pathlib import Path
 
+from keyvalue.fifo import fifo_paths
 from keyvalue.requests import (
     DeleteRequest,
     GetRequest,
@@ -23,40 +24,17 @@ class KeyValueClientError(Exception):
     pass
 
 
-class Client:
+class Transport:
+    def request(self, _request: Request) -> Response:
+        raise NotImplementedError
+
+
+class SocketTransport(Transport):
     def __init__(self, socket_path: Path):
         self.socket_path = socket_path
 
-    def get(self, key: str) -> str | None:
-        response = self._make_request(GetRequest(command="get", key=key))
-
-        if not isinstance(response, GetSuccessResponse):
-            raise KeyValueClientError(f"unexpected response: {response!r}")
-
-        return response.value
-
-    def set(self, key: str, value: str) -> None:
-        response = self._make_request(SetRequest(command="set", key=key, value=value))
-
-        if not isinstance(response, MutationSuccessResponse):
-            raise KeyValueClientError(f"unexpected response: {response!r}")
-
-    def keys(self) -> list[str]:
-        response = self._make_request(KeysRequest(command="keys"))
-
-        if not isinstance(response, KeysSuccessResponse):
-            raise KeyValueClientError(f"unexpected response: {response!r}")
-
-        return response.keys
-
-    def delete(self, key: str) -> None:
-        response = self._make_request(DeleteRequest(command="delete", key=key))
-
-        if not isinstance(response, MutationSuccessResponse):
-            raise KeyValueClientError(f"unexpected response: {response!r}")
-
     # Generically makes a request over the socket
-    def _make_request(self, request: Request) -> Response:
+    def request(self, request: Request) -> Response:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.connect(str(self.socket_path))
             client.sendall(encode_request(request))
@@ -68,3 +46,64 @@ class Client:
                 raise KeyValueClientError(f"unexpected response: {response!r}")
 
             return response
+
+
+class FifoTransport(Transport):
+    def __init__(self, base_fifo_path: Path):
+        self.base_fifo_path = base_fifo_path
+
+    def request(self, request: Request) -> Response:
+        request_path, response_path = fifo_paths(self.base_fifo_path)
+
+        for path in (request_path, response_path):
+            if not path.exists():
+                raise RuntimeError("Server isn't running yet.")
+
+        with open(request_path, "wb") as request_fifo:
+            request_fifo.write(encode_request(request))
+            request_fifo.flush()
+
+        with open(response_path, "rb") as response_fifo:
+            raw_response = response_fifo.readline().strip()
+
+        response = parse_response(raw_response)
+
+        if isinstance(response, ErrorResponse):
+            raise KeyValueClientError(f"unexpected response: {response!r}")
+
+        return response
+
+
+class Client:
+    def __init__(self, transport: Transport):
+        self.transport = transport
+
+    def get(self, key: str) -> str | None:
+        response = self.transport.request(GetRequest(command="get", key=key))
+
+        if not isinstance(response, GetSuccessResponse):
+            raise KeyValueClientError(f"unexpected response: {response!r}")
+
+        return response.value
+
+    def set(self, key: str, value: str) -> None:
+        response = self.transport.request(
+            SetRequest(command="set", key=key, value=value)
+        )
+
+        if not isinstance(response, MutationSuccessResponse):
+            raise KeyValueClientError(f"unexpected response: {response!r}")
+
+    def keys(self) -> list[str]:
+        response = self.transport.request(KeysRequest(command="keys"))
+
+        if not isinstance(response, KeysSuccessResponse):
+            raise KeyValueClientError(f"unexpected response: {response!r}")
+
+        return response.keys
+
+    def delete(self, key: str) -> None:
+        response = self.transport.request(DeleteRequest(command="delete", key=key))
+
+        if not isinstance(response, MutationSuccessResponse):
+            raise KeyValueClientError(f"unexpected response: {response!r}")
