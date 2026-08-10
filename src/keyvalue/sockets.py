@@ -2,7 +2,14 @@ import socket
 from pathlib import Path
 
 from keyvalue.commands import process_request
+from keyvalue.responses import ErrorResponse, encode_response
 from keyvalue.store import Store
+
+MAX_REQUEST_BYTES = 1024 * 1024
+
+
+class RequestTooLargeError(Exception):
+    pass
 
 
 class SocketServer:
@@ -23,10 +30,36 @@ class SocketServer:
             self._handle_connection(conn)
 
     def _handle_connection(self, conn: socket.socket) -> None:
-        raw_request = conn.recv(4096).decode("utf-8")
-        response = process_request(self.store, raw_request)
+        try:
+            raw_request = self._read_request(conn).decode("utf-8")
+            response = process_request(self.store, raw_request)
 
-        conn.sendall(response)
+            conn.sendall(response)
+        except RequestTooLargeError:
+            response = encode_response(
+                ErrorResponse(ok=False, message="request is too large")
+            )
+            conn.sendall(response)
+
+    def _read_request(self, conn: socket.socket) -> bytes:
+        chunks = []
+        bytes_read = 0
+
+        while True:
+            chunk = conn.recv(4096)
+            if chunk == b"":
+                break
+
+            bytes_read += len(chunk)
+            if bytes_read > MAX_REQUEST_BYTES:
+                raise RequestTooLargeError("request is too large")
+
+            chunks.append(chunk)
+
+            if b"\n" in chunk:
+                break
+
+        return b"".join(chunks)
 
 
 class UnixSocketServer(SocketServer):
