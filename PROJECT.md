@@ -68,3 +68,19 @@ Turn your key-value store into a Unix domain socket server. Write a client subco
   - [x] Do this after the UNIX socket path works
   - [x] Extract only the parts shared by UNIX sockets and FIFO mode
   - [x] Keep request parsing, response encoding, and store dispatch independent from the transport
+
+# Week 6
+
+Extend the client–server interface you added last week to support real networking. Add an `--ipc` flag to your server that can be `unix`, `fifo` (if you implemented it last week), `udp`, or `tcp`.
+
+For UDP: implement your own reliable-message semantics, i.e., the client should detect if a message was received, and retry if not.
+
+For TCP: make sure there is some way to detect message boundaries in the bytestream, so that a client can send multiple messages on the same connection.
+
+Listen on port `uid + 1000` for UDP and port `uid + 2000` for TCP, where uid is your user ID as printed by id -u in the shell. For example, if id -u prints 1008, then use ports 2008 and 3008. This ensures that you don't interfere with your classmates.
+
+- [x] Refactor transport and server to be classes with shared socket logic
+- [x] Add `--mode` flags
+- [x] Add `--host` and `--port` flags
+- [x] Add `--mode tcp`
+- [ ] Add `--mode udp`

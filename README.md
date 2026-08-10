@@ -35,6 +35,9 @@ By default, the KV store runs in UNIX domain socket mode.
 
 If you want to communicate over bi-directional FIFO pipes, pass `--mode fifo`.
 
+If you want to communicate over TCP sockets, pass `--mode tcp`. TCP mode listens
+on `127.0.0.1` and port `$UID + 2000` by default.
+
 ## Development
 
 ```sh

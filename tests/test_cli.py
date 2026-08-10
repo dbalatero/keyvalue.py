@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -137,6 +138,18 @@ def test_cli_defaults_fifo_path() -> None:
     assert args.fifo == Path("/tmp/keyvalue")
 
 
+def test_cli_defaults_tcp_host() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
+
+    assert args.host == "127.0.0.1"
+
+
+def test_cli_defaults_tcp_port() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
+
+    assert args.port == os.getuid() + 2000
+
+
 def test_cli_accepts_top_level_socket_path(tmp_path) -> None:
     socket_path = tmp_path / "keyvalue.sock"
 
@@ -156,6 +169,26 @@ def test_cli_accepts_fifo_mode_path(tmp_path) -> None:
 
     assert args.mode == "fifo"
     assert args.fifo == fifo_path
+
+
+def test_cli_accepts_tcp_mode_host_and_port() -> None:
+    args = build_parser().parse_args(
+        [
+            "--data",
+            "/tmp/kvdata",
+            "--mode",
+            "tcp",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "12345",
+            "server",
+        ]
+    )
+
+    assert args.mode == "tcp"
+    assert args.host == "0.0.0.0"
+    assert args.port == 12345
 
 
 def test_cli_allows_missing_subcommand_for_server_mode() -> None:

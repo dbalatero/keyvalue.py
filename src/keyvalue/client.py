@@ -30,13 +30,9 @@ class Transport:
 
 
 class SocketTransport(Transport):
-    def __init__(self, socket_path: Path):
-        self.socket_path = socket_path
-
     # Generically makes a request over the socket
     def request(self, request: Request) -> Response:
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-            client.connect(str(self.socket_path))
+        with self._create_client() as client:
             client.sendall(encode_request(request))
 
             raw_response = client.recv(4096)
@@ -46,6 +42,32 @@ class SocketTransport(Transport):
                 raise KeyValueClientError(f"unexpected response: {response!r}")
 
             return response
+
+    def _create_client(self) -> socket.socket:
+        raise NotImplementedError
+
+
+class UnixSocketTransport(SocketTransport):
+    def __init__(self, socket_path: Path):
+        self.socket_path = socket_path
+
+    def _create_client(self) -> socket.socket:
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.connect(str(self.socket_path))
+
+        return client
+
+
+class TcpSocketTransport(SocketTransport):
+    def __init__(self, *, host: str, port: int):
+        self.host = host
+        self.port = port
+
+    def _create_client(self) -> socket.socket:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((self.host, self.port))
+
+        return client
 
 
 class FifoTransport(Transport):

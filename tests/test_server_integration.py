@@ -1,20 +1,32 @@
 import pytest
 
-from keyvalue.client import Client, FifoTransport, SocketTransport
+from keyvalue.client import (
+    Client,
+    FifoTransport,
+    TcpSocketTransport,
+    UnixSocketTransport,
+)
 from server_helpers import (
     RunningServer,
     start_fifo_server,
     start_socket_server,
+    start_tcp_server,
     stop_server,
 )
 
 
 def make_client(server: RunningServer) -> Client:
-    transport = (
-        SocketTransport(server.path)
-        if server.mode == "socket"
-        else FifoTransport(server.path)
-    )
+    if server.mode == "socket":
+        assert server.path is not None
+        transport = UnixSocketTransport(server.path)
+    elif server.mode == "fifo":
+        assert server.path is not None
+        transport = FifoTransport(server.path)
+    else:
+        assert server.host is not None
+        assert server.port is not None
+        transport = TcpSocketTransport(host=server.host, port=server.port)
+
     return Client(transport)
 
 
@@ -23,6 +35,7 @@ def make_client(server: RunningServer) -> Client:
     [
         (start_socket_server,),
         (start_fifo_server,),
+        (start_tcp_server,),
     ],
 )
 def test_server_process_handles_client_requests(tmp_path, start_server) -> None:

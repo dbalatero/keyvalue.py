@@ -85,3 +85,26 @@ class UnixSocketServer(SocketServer):
             raise
 
         return sock
+
+
+class TcpSocketServer(SocketServer):
+    def __init__(self, *, store: Store, host: str, port: int):
+        super().__init__(store=store)
+        self.host = host
+        self.port = port
+
+    def _create_socket(self) -> socket.socket:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            # The OS might keep around recently closed TCP connections, so this
+            # will ensure we can do address reuse if we run the server again
+            # quickly.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((self.host, self.port))
+            sock.listen()
+        except Exception:
+            sock.close()
+            raise
+
+        return sock

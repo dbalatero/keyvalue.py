@@ -2,7 +2,7 @@ import socket
 import threading
 from contextlib import closing
 
-from keyvalue.sockets import MAX_REQUEST_BYTES, UnixSocketServer
+from keyvalue.sockets import MAX_REQUEST_BYTES, TcpSocketServer, UnixSocketServer
 from keyvalue.store import Store
 
 
@@ -52,6 +52,26 @@ def test_unix_socket_server_create_socket_removes_stale_socket_file(tmp_path) ->
     with server._create_socket() as sock:
         assert sock.family == socket.AF_UNIX
         assert socket_path.exists()
+
+
+def test_tcp_socket_server_create_socket_binds_tcp_socket(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+    server = TcpSocketServer(store=store, host="127.0.0.1", port=0)
+
+    with server._create_socket() as sock:
+        assert sock.family == socket.AF_INET
+        assert sock.type == socket.SOCK_STREAM
+
+
+def test_tcp_socket_server_create_socket_listens_for_connections(tmp_path) -> None:
+    store = Store(tmp_path / "data")
+    server = TcpSocketServer(store=store, host="127.0.0.1", port=0)
+
+    with server._create_socket() as sock:
+        host, port = sock.getsockname()
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+            client.connect((host, port))
 
 
 def test_unix_socket_server_accept_one_accepts_client_connection_and_handles_request(

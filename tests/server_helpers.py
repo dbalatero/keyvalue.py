@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -6,15 +7,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from keyvalue.client import Client, FifoTransport, KeyValueClientError, SocketTransport
+from keyvalue.client import (
+    Client,
+    FifoTransport,
+    KeyValueClientError,
+    TcpSocketTransport,
+    UnixSocketTransport,
+)
 
 
 @dataclass(frozen=True)
 class RunningServer:
     process: subprocess.Popen[bytes]
     data_dir: Path
-    mode: Literal["socket", "fifo"]
-    path: Path
+    mode: Literal["socket", "fifo", "tcp"]
+    path: Path | None = None
+    host: str | None = None
+    port: int | None = None
 
 
 def wait_until_server_ready(
@@ -43,19 +52,39 @@ def wait_until_server_ready(
     raise AssertionError(f"server did not become ready: {last_error}")
 
 
-def start_server(tmp_path: Path, mode: Literal["socket", "fifo"]) -> RunningServer:
+def reserve_tcp_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def start_server(
+    tmp_path: Path,
+    mode: Literal["socket", "fifo", "tcp"],
+) -> RunningServer:
     repo_root = Path(__file__).parents[1]
     data_dir = tmp_path / "data"
-    path = tmp_path / ("keyvalue.sock" if mode == "socket" else "keyvalue")
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(repo_root / "src")
 
-    mode_args = (
-        ["--mode", "socket", "--socket", str(path)]
-        if mode == "socket"
-        else ["--mode", "fifo", "--fifo", str(path)]
-    )
+    path = None
+    host = None
+    port = None
+
+    if mode == "socket":
+        path = tmp_path / "keyvalue.sock"
+        mode_args = ["--mode", "socket", "--socket", str(path)]
+        transport = UnixSocketTransport(path)
+    elif mode == "fifo":
+        path = tmp_path / "keyvalue"
+        mode_args = ["--mode", "fifo", "--fifo", str(path)]
+        transport = FifoTransport(path)
+    else:
+        host = "127.0.0.1"
+        port = reserve_tcp_port()
+        mode_args = ["--mode", "tcp", "--host", host, "--port", str(port)]
+        transport = TcpSocketTransport(host=host, port=port)
 
     process = subprocess.Popen(
         [
@@ -73,7 +102,6 @@ def start_server(tmp_path: Path, mode: Literal["socket", "fifo"]) -> RunningServ
         stderr=subprocess.PIPE,
     )
 
-    transport = SocketTransport(path) if mode == "socket" else FifoTransport(path)
     wait_until_server_ready(process, Client(transport))
 
     return RunningServer(
@@ -81,6 +109,8 @@ def start_server(tmp_path: Path, mode: Literal["socket", "fifo"]) -> RunningServ
         data_dir=data_dir,
         mode=mode,
         path=path,
+        host=host,
+        port=port,
     )
 
 
@@ -90,6 +120,10 @@ def start_socket_server(tmp_path: Path) -> RunningServer:
 
 def start_fifo_server(tmp_path: Path) -> RunningServer:
     return start_server(tmp_path, "fifo")
+
+
+def start_tcp_server(tmp_path: Path) -> RunningServer:
+    return start_server(tmp_path, "tcp")
 
 
 def stop_server(process: subprocess.Popen[bytes]) -> None:

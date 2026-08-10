@@ -1,9 +1,15 @@
 import argparse
+import os
 from pathlib import Path
 
-from keyvalue.client import Client, FifoTransport, SocketTransport
+from keyvalue.client import (
+    Client,
+    FifoTransport,
+    TcpSocketTransport,
+    UnixSocketTransport,
+)
 from keyvalue.fifo import serve_fifo
-from keyvalue.sockets import UnixSocketServer
+from keyvalue.sockets import TcpSocketServer, UnixSocketServer
 from keyvalue.store import Store
 
 
@@ -17,7 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--mode",
-        choices=("socket", "fifo"),
+        choices=("socket", "fifo", "tcp"),
         default="socket",
         help="transport mode",
     )
@@ -32,6 +38,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("/tmp/keyvalue"),
         help="path prefix for the FIFO communication pipes",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="hostname to run the tcp server on",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=os.getuid() + 2000,
+        help="port to run the tcp server on",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=False)
@@ -57,11 +75,16 @@ def main(argv: list[str] | None = None) -> None:
     if args.command is None:
         args.command = "server"
 
-    transport = (
-        SocketTransport(args.socket)
-        if args.mode == "socket"
-        else FifoTransport(args.fifo)
-    )
+    transport = None
+    match args.mode:
+        case "socket":
+            transport = UnixSocketTransport(args.socket)
+        case "fifo":
+            transport = FifoTransport(args.fifo)
+        case "tcp":
+            transport = TcpSocketTransport(host=args.host, port=args.port)
+        case _:
+            raise ValueError("did not handle mode")
 
     client = Client(transport)
 
@@ -92,9 +115,13 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Running in {args.mode} mode")
 
             if args.mode == "socket":
-                print("Listening at", args.socket)
+                print(f"Listening at {args.socket}")
 
                 server = UnixSocketServer(store=store, socket_path=args.socket)
+                server.serve()
+            elif args.mode == "tcp":
+                print(f"Listening on TCP at {args.host}:{args.port}")
+                server = TcpSocketServer(store=store, host=args.host, port=args.port)
                 server.serve()
             else:
                 serve_fifo(args.fifo, store)
