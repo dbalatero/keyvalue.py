@@ -12,7 +12,7 @@ class RequestTooLargeError(Exception):
     pass
 
 
-class SocketServer:
+class StreamServer:
     def __init__(self, *, store: Store):
         self.store = store
 
@@ -62,7 +62,7 @@ class SocketServer:
         return b"".join(chunks)
 
 
-class UnixSocketServer(SocketServer):
+class UnixSocketServer(StreamServer):
     def __init__(self, *, store: Store, socket_path: Path):
         super().__init__(store=store)
         self.socket_path = socket_path
@@ -87,7 +87,7 @@ class UnixSocketServer(SocketServer):
         return sock
 
 
-class TcpSocketServer(SocketServer):
+class TcpSocketServer(StreamServer):
     def __init__(self, *, store: Store, host: str, port: int):
         super().__init__(store=store)
         self.host = host

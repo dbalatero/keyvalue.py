@@ -29,7 +29,7 @@ class Transport:
         raise NotImplementedError
 
 
-class SocketTransport(Transport):
+class StreamTransport(Transport):
     # Generically makes a request over the socket
     def request(self, request: Request) -> Response:
         with self._create_client() as client:
@@ -47,7 +47,7 @@ class SocketTransport(Transport):
         raise NotImplementedError
 
 
-class UnixSocketTransport(SocketTransport):
+class UnixSocketTransport(StreamTransport):
     def __init__(self, socket_path: Path):
         self.socket_path = socket_path
 
@@ -58,7 +58,7 @@ class UnixSocketTransport(SocketTransport):
         return client
 
 
-class TcpSocketTransport(SocketTransport):
+class TcpSocketTransport(StreamTransport):
     def __init__(self, *, host: str, port: int):
         self.host = host
         self.port = port
