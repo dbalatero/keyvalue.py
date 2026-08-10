@@ -3,7 +3,7 @@ from pathlib import Path
 
 from keyvalue.client import Client, FifoTransport, SocketTransport
 from keyvalue.fifo import serve_fifo
-from keyvalue.sockets import serve_socket
+from keyvalue.sockets import UnixSocketServer
 from keyvalue.store import Store
 
 
@@ -94,7 +94,8 @@ def main(argv: list[str] | None = None) -> None:
             if args.mode == "socket":
                 print("Listening at", args.socket)
 
-                serve_socket(args.socket, store)
+                server = UnixSocketServer(store=store, socket_path=args.socket)
+                server.serve()
             else:
                 serve_fifo(args.fifo, store)
 

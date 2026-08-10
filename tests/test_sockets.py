@@ -2,41 +2,50 @@ import socket
 import threading
 from contextlib import closing
 
-from keyvalue.sockets import accept_one, create_server_socket, handle_connection
+from keyvalue.sockets import UnixSocketServer
 from keyvalue.store import Store
 
 
-def test_create_server_socket_binds_unix_socket(tmp_path) -> None:
+def test_unix_socket_server_create_socket_binds_unix_socket(tmp_path) -> None:
     socket_path = tmp_path / "keyvalue.sock"
+    store = Store(tmp_path / "data")
+    server = UnixSocketServer(socket_path=socket_path, store=store)
 
-    with create_server_socket(socket_path) as server:
-        assert server.family == socket.AF_UNIX
-        assert server.type == socket.SOCK_STREAM
+    with server._create_socket() as sock:
+        assert sock.family == socket.AF_UNIX
+        assert sock.type == socket.SOCK_STREAM
         assert socket_path.exists()
 
 
-def test_create_server_socket_listens_for_connections(tmp_path) -> None:
+def test_unix_socket_server_create_socket_listens_for_connections(tmp_path) -> None:
     socket_path = tmp_path / "keyvalue.sock"
+    store = Store(tmp_path / "data")
+    server = UnixSocketServer(socket_path=socket_path, store=store)
 
-    with create_server_socket(socket_path):
+    with server._create_socket():
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.connect(str(socket_path))
 
 
-def test_create_server_socket_removes_stale_socket_file(tmp_path) -> None:
+def test_unix_socket_server_create_socket_removes_stale_socket_file(tmp_path) -> None:
     socket_path = tmp_path / "keyvalue.sock"
+    store = Store(tmp_path / "data")
+    server = UnixSocketServer(socket_path=socket_path, store=store)
 
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stale_server:
         stale_server.bind(str(socket_path))
 
-    with create_server_socket(socket_path) as server:
-        assert server.family == socket.AF_UNIX
+    with server._create_socket() as sock:
+        assert sock.family == socket.AF_UNIX
         assert socket_path.exists()
 
 
-def test_accept_one_accepts_client_connection_and_handles_request(tmp_path) -> None:
+def test_unix_socket_server_accept_one_accepts_client_connection_and_handles_request(
+    tmp_path,
+) -> None:
     socket_path = tmp_path / "keyvalue.sock"
     store = Store(tmp_path / "data")
+    server = UnixSocketServer(socket_path=socket_path, store=store)
     response = None
 
     def client_request() -> None:
@@ -47,11 +56,11 @@ def test_accept_one_accepts_client_connection_and_handles_request(tmp_path) -> N
             client.sendall(b'{"command":"set","key":"name","value":"Alice"}\n')
             response = client.recv(4096)
 
-    with create_server_socket(socket_path) as server:
+    with server._create_socket() as sock:
         client_thread = threading.Thread(target=client_request)
         client_thread.start()
 
-        accept_one(server, store)
+        server._accept_one(sock)
 
         client_thread.join(timeout=1)
 
@@ -60,27 +69,39 @@ def test_accept_one_accepts_client_connection_and_handles_request(tmp_path) -> N
     assert not client_thread.is_alive()
 
 
-def test_handle_connection_reads_request_and_writes_response(tmp_path) -> None:
+def test_unix_socket_server_handle_connection_reads_request_and_writes_response(
+    tmp_path,
+) -> None:
     client, server = socket.socketpair()
     store = Store(tmp_path / "data")
+    socket_server = UnixSocketServer(
+        socket_path=tmp_path / "keyvalue.sock",
+        store=store,
+    )
 
     with closing(client), closing(server):
         client.sendall(b'{"command":"set","key":"name","value":"Alice"}\n')
 
-        handle_connection(server, store)
+        socket_server._handle_connection(server)
 
         assert client.recv(4096) == b'{"ok":true}\n'
         assert store.get("name") == "Alice"
 
 
-def test_handle_connection_writes_error_response_for_invalid_request(tmp_path) -> None:
+def test_unix_socket_server_handle_connection_writes_error_response_for_invalid_request(
+    tmp_path,
+) -> None:
     client, server = socket.socketpair()
     store = Store(tmp_path / "data")
+    socket_server = UnixSocketServer(
+        socket_path=tmp_path / "keyvalue.sock",
+        store=store,
+    )
 
     with closing(client), closing(server):
         client.sendall(b'{"command":"get","key":"Invalid"}\n')
 
-        handle_connection(server, store)
+        socket_server._handle_connection(server)
 
         response = client.recv(4096)
         assert b'"ok":false' in response

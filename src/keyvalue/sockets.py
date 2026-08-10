@@ -5,40 +5,50 @@ from keyvalue.commands import process_request
 from keyvalue.store import Store
 
 
-def create_server_socket(socket_path: Path) -> socket.socket:
-    # Get a fresh socket each time
-    socket_path.unlink(missing_ok=True)
+class SocketServer:
+    def __init__(self, *, store: Store):
+        self.store = store
 
-    sock = socket.socket(
-        socket.AF_UNIX,  # unix domain socket
-        socket.SOCK_STREAM,  # create with stream interface
-    )
+    def serve(self) -> None:
+        with self._create_socket() as sock:
+            while True:
+                self._accept_one(sock)
 
-    try:
-        sock.bind(str(socket_path))
-        sock.listen()
-    except Exception:
-        # Let's cleanup here, in case we hit an exception
-        sock.close()
-        raise
+    def _create_socket(self) -> socket.socket:
+        raise NotImplementedError
 
-    return sock
+    def _accept_one(self, sock: socket.socket) -> None:
+        conn, _ = sock.accept()
+        with conn:
+            self._handle_connection(conn)
 
+    def _handle_connection(self, conn: socket.socket) -> None:
+        raw_request = conn.recv(4096).decode("utf-8")
+        response = process_request(self.store, raw_request)
 
-def accept_one(sock: socket.socket, store: Store) -> None:
-    conn, _ = sock.accept()
-    with conn:
-        handle_connection(conn, store)
+        conn.sendall(response)
 
 
-def handle_connection(conn: socket.socket, store: Store) -> None:
-    raw_request = conn.recv(4096).decode("utf-8")
-    response = process_request(store, raw_request)
+class UnixSocketServer(SocketServer):
+    def __init__(self, *, store: Store, socket_path: Path):
+        super().__init__(store=store)
+        self.socket_path = socket_path
 
-    conn.sendall(response)
+    def _create_socket(self) -> socket.socket:
+        # Get a fresh socket each time
+        self.socket_path.unlink(missing_ok=True)
 
+        sock = socket.socket(
+            socket.AF_UNIX,  # unix domain socket
+            socket.SOCK_STREAM,  # create with stream interface
+        )
 
-def serve_socket(socket_path: Path, store: Store) -> None:
-    with create_server_socket(socket_path) as sock:
-        while True:
-            accept_one(sock, store)
+        try:
+            sock.bind(str(self.socket_path))
+            sock.listen()
+        except Exception:
+            # Let's cleanup here, in case we hit an exception
+            sock.close()
+            raise
+
+        return sock
