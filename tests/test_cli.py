@@ -86,7 +86,14 @@ def test_cli_delete_rejects_invalid_key(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="invalid key"):
         main(
-            ["--data", str(data_dir), "--socket", "/tmp/keyvalue.sock", "delete", "Invalid"]
+            [
+                "--data",
+                str(data_dir),
+                "--socket",
+                "/tmp/keyvalue.sock",
+                "delete",
+                "Invalid",
+            ]
         )
 
 
@@ -101,7 +108,14 @@ def test_cli_rejects_invalid_key(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="invalid key"):
         main(
-            ["--data", str(data_dir), "--socket", "/tmp/keyvalue.sock", "get", "Invalid"]
+            [
+                "--data",
+                str(data_dir),
+                "--socket",
+                "/tmp/keyvalue.sock",
+                "get",
+                "Invalid",
+            ]
         )
 
 
