@@ -31,9 +31,9 @@ just client delete name
 
 ### Modes
 
-By default, the KV store runs on UNIX domain sockets (`--socket /path/to/some.socket`).
+By default, the KV store runs in UNIX domain socket mode.
 
-If you want to communicate over bi-directional FIFO pipes, you can pass in `--fifo /tmp/fifo` to use `/tmp/fifo.request` and `/tmp/fifo.response` for communication.
+If you want to communicate over bi-directional FIFO pipes, pass `--mode fifo`.
 
 ## Development
 

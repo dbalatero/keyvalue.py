@@ -85,11 +85,13 @@ def test_cli_delete_rejects_invalid_key(tmp_path) -> None:
     data_dir = tmp_path / "data"
 
     with pytest.raises(ValueError, match="invalid key"):
-        main(["--data", str(data_dir), "delete", "Invalid"])
+        main(
+            ["--data", str(data_dir), "--socket", "/tmp/keyvalue.sock", "delete", "Invalid"]
+        )
 
 
 def test_cli_defaults_data_path() -> None:
-    args = build_parser().parse_args(["get", "name"])
+    args = build_parser().parse_args(["--socket", "/tmp/keyvalue.sock", "get", "name"])
 
     assert args.data == Path("/tmp/keyvalue-data")
 
@@ -98,13 +100,27 @@ def test_cli_rejects_invalid_key(tmp_path) -> None:
     data_dir = tmp_path / "data"
 
     with pytest.raises(ValueError, match="invalid key"):
-        main(["--data", str(data_dir), "get", "Invalid"])
+        main(
+            ["--data", str(data_dir), "--socket", "/tmp/keyvalue.sock", "get", "Invalid"]
+        )
+
+
+def test_cli_defaults_socket_mode() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
+
+    assert args.mode == "socket"
 
 
 def test_cli_defaults_socket_path() -> None:
     args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
 
     assert args.socket == Path("/tmp/keyvalue.sock")
+
+
+def test_cli_defaults_fifo_path() -> None:
+    args = build_parser().parse_args(["--data", "/tmp/kvdata", "server"])
+
+    assert args.fifo == Path("/tmp/keyvalue")
 
 
 def test_cli_accepts_top_level_socket_path(tmp_path) -> None:
@@ -115,6 +131,17 @@ def test_cli_accepts_top_level_socket_path(tmp_path) -> None:
     )
 
     assert args.socket == socket_path
+
+
+def test_cli_accepts_fifo_mode_path(tmp_path) -> None:
+    fifo_path = tmp_path / "keyvalue"
+
+    args = build_parser().parse_args(
+        ["--data", "/tmp/kvdata", "--mode", "fifo", "--fifo", str(fifo_path), "server"]
+    )
+
+    assert args.mode == "fifo"
+    assert args.fifo == fifo_path
 
 
 def test_cli_allows_missing_subcommand_for_server_mode() -> None:

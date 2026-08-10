@@ -16,6 +16,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="path to the database file",
     )
     parser.add_argument(
+        "--mode",
+        choices=("socket", "fifo"),
+        default="socket",
+        help="transport mode",
+    )
+    parser.add_argument(
         "--socket",
         type=Path,
         default=Path("/tmp/keyvalue.sock"),
@@ -24,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--fifo",
         type=Path,
-        default=None,
+        default=Path("/tmp/keyvalue"),
         help="path prefix for the FIFO communication pipes",
     )
 
@@ -51,11 +57,10 @@ def main(argv: list[str] | None = None) -> None:
     if args.command is None:
         args.command = "server"
 
-    mode = "fifo" if args.fifo else "socket"
-    socket_path = args.socket
-
     transport = (
-        SocketTransport(socket_path) if mode == "socket" else FifoTransport(args.fifo)
+        SocketTransport(args.socket)
+        if args.mode == "socket"
+        else FifoTransport(args.fifo)
     )
 
     client = Client(transport)
@@ -84,12 +89,12 @@ def main(argv: list[str] | None = None) -> None:
 
         case "server":
             store = Store(args.data)
-            print(f"Running in {mode} mode")
+            print(f"Running in {args.mode} mode")
 
-            if mode == "socket":
+            if args.mode == "socket":
                 print("Listening at", args.socket)
 
-                serve_socket(socket_path, store)
+                serve_socket(args.socket, store)
             else:
                 serve_fifo(args.fifo, store)
 

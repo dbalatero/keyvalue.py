@@ -51,7 +51,11 @@ def start_server(tmp_path: Path, mode: Literal["socket", "fifo"]) -> RunningServ
     env = os.environ.copy()
     env["PYTHONPATH"] = str(repo_root / "src")
 
-    mode_args = ["--socket", str(path)] if mode == "socket" else ["--fifo", str(path)]
+    mode_args = (
+        ["--mode", "socket", "--socket", str(path)]
+        if mode == "socket"
+        else ["--mode", "fifo", "--fifo", str(path)]
+    )
 
     process = subprocess.Popen(
         [
